@@ -55,6 +55,7 @@ class BenchmarkQuery {
   long getEndTimestamp() { return m_endTimestamp; }
   virtual TupleSchema *getSchema() = 0;
   virtual std::vector<char> *getInMemoryData() = 0;
+  virtual std::vector<char>* getInMemoryData(int i) { return getInMemoryData(); }
   virtual std::vector<char> *getSecondInMemoryData() { throw std::runtime_error("error: the function is not implemented"); };
   virtual std::vector<char> *getStaticData() = 0;
   static void parseCommandLineArguments(int argc, const char **argv) {
@@ -142,6 +143,7 @@ class BenchmarkQuery {
   }
 
   int runBenchmark(bool terminate = true) {
+    int i = 0;
     auto t1 = std::chrono::high_resolution_clock::now();
     auto inputBuffer = getInMemoryData();
     std::vector<char> * alterInputBuffer = nullptr;
@@ -256,7 +258,9 @@ class BenchmarkQuery {
         auto buffer = getRDMABuffer();
         application->processData((void *)buffer, inputBuffer->size(), systemTimestamp);
 #else
-        application->processData(*inputBuffer, systemTimestamp);
+        auto ibuf = getInMemoryData(i);
+        application->processData(*ibuf, systemTimestamp);
+        i = (i+1)%10000;
 #endif
       }
     } catch (std::exception &e) {

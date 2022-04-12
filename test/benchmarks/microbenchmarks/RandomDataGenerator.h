@@ -20,6 +20,7 @@ class RandomDataGenerator : public BenchmarkQuery {
   QueryApplication *m_application = nullptr;
   std::vector<char> *m_data_1 = nullptr;
   std::vector<char> *m_data_2 = nullptr;
+  std::vector<std::vector<char>*> m_data;
   bool m_debug = false;
 
   QueryApplication *getApplication() override {
@@ -29,35 +30,35 @@ class RandomDataGenerator : public BenchmarkQuery {
   virtual void createApplication() = 0;
 
   void loadInMemoryData() {
-    size_t len = SystemConf::getInstance().BUNDLE_SIZE;
-    m_data_1 = new std::vector<char>(len);
-    auto buf = (InputSchema *) m_data_1->data();
+      for (int i=0; i<10000; i++) {
+          size_t len = SystemConf::getInstance().BUNDLE_SIZE;
+          auto m_data_1 = new std::vector<char>(len);
+          auto buf = (InputSchema *) m_data_1->data();
 
-    const int range_from = 1;
-    const int range_to = 1000;
-    std::random_device rand_dev;
-    std::mt19937 generator(rand_dev());
-    std::uniform_int_distribution<int> distr(range_from, range_to);
+          const int range_from = 1;
+          const int range_to = 1000;
+          std::random_device rand_dev;
+          std::mt19937 generator(rand_dev());
+          std::uniform_int_distribution<int> distr(range_from, range_to);
 
-    unsigned long idx = 0;
-    while (idx < len / sizeof(InputSchema)) {
-      buf[idx].timestamp = idx;
-      buf[idx].attr1 = distr(generator);
-      buf[idx].attr2 = distr(generator);
-      idx++;
-    }
+          unsigned long idx = 0;
+          while (idx < len / sizeof(InputSchema)) {
+              buf[idx].timestamp = idx;
+              buf[idx].attr1 = distr(generator);
+              buf[idx].attr2 = distr(generator);
+              idx++;
+          }
 
-    if (m_debug) {
-      std::cout << "timestamp jobId machineId eventType userId category priority cpu ram disk constraints" << std::endl;
-      for (unsigned long i = 0; i < m_data_1->size() / sizeof(InputSchema); ++i) {
-        printf("[DBG] %09d: %7d %8d %8d  \n",
-               i, buf[i].timestamp, buf[i].attr1, buf[i].attr2);
+          m_data.push_back(m_data_1);
       }
-    }
-  };
+  }
 
   std::vector<char> *getInMemoryData() override {
     return m_data_1;
+  }
+
+  std::vector<char>* getInMemoryData(int i) override {
+      return m_data[i%10000];
   }
 
   std::vector<char> *getSecondInMemoryData() override {
